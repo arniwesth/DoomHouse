@@ -23,7 +23,7 @@ The engine supports different visual styles through SQL-based rendering logic. E
 
 ## Prerequisites
 
-- **Python 3.x**
+- **Python 3.11 or later**
 - **ClickHouse Server** (Local or Remote)
 
 ## Installation
