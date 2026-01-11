@@ -4,7 +4,10 @@
   <img src="images/splash.png" width="400" alt="Splash">
 </p>
 
-### DISCLAIMER: This repository is ~95% generated using Kilo Code with Gemini 3.0 Pro Preview, Gemini 3.0 Flash Preview, Opus 4.5 and ChatGPT 5.2. 
+### DISCLAIMER 
+_**This repository is ~95% generated using Kilo Code with Gemini 3.0 Pro Preview, Gemini 3.0 Flash Preview, Opus 4.5 and ChatGPT 5.2.**_ 
+
+### Description
 
 DOOMHouse is an experimental "Doom-like" game engine that offloads 3D rendering logic entirely to a ClickHouse database. 
 
