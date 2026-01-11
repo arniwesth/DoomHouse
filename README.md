@@ -15,6 +15,11 @@ This project serves multiple purposes:
 
 The core graphics logic — including collision detection, raycasting, texture mapping, and shading — is executed via SQL queries, while a lightweight Python client handles user input and displays the resulting frames.
 
+### Screen recording
+<p align="center">
+[![Watch the video](images/video.mp4)]
+</p>
+
 ### Themes
 The engine supports different visual styles through SQL-based rendering logic. Examples:
 | Theme 1 | Theme 2 |
