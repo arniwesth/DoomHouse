@@ -16,9 +16,7 @@ This project serves multiple purposes:
 The core graphics logic — including collision detection, raycasting, texture mapping, and shading — is executed via SQL queries, while a lightweight Python client handles user input and displays the resulting frames.
 
 ### Screen recording
-<p align="center">
-[![DoomHouse](https://markdown-videos-api.jorgenkh.no/url?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D_yni1K0cqW8)](https://www.youtube.com/watch?v=_yni1K0cqW8)
-</p>
+[![DoomHouse](images/yt_thumbnail.jpeg)](https://www.youtube.com/watch?v=_yni1K0cqW8)
 
 ### Themes
 The engine supports different visual styles through SQL-based rendering logic. Examples:
