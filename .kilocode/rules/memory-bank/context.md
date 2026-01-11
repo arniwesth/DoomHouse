@@ -18,7 +18,7 @@ Based on Notes.md, the project evolved through several iterations:
 8. **Post-Processing Pipeline**: Added a second Materialized View for SWAR-based smoothing/blurring.
 9. **Dictionary Optimization**: Moved map and textures to ClickHouse Dictionaries with split R/G/B channels.
 10. **Theme Support**: Added interactive theme switching (Classic/Dungeon) and high-res texture support (512x512).
-11. **Documentation Expansion**: Added comprehensive "Architecture and Rendering Optimizations" section to `README.md`.
+
 
 Latest implementation includes:
 - **Table-based Input/Output**: Client inserts to `player_input` and selects from `rendered_frame_post_processed`.

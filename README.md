@@ -1,14 +1,17 @@
 # DOOMHouse
 
-<img src="images/splash.png" width="400" alt="Splash">
+<p align="center">
+  <img src="images/splash.png" width="400" alt="Splash">
+</p>
 
 ### DISCLAIMER: This repository is ~95% generated using Kilo Code with Gemini 3.0 Pro Preview, Gemini 3.0 Flash Preview, Opus 4.5 and ChatGPT 5.2. 
 
 DOOMHouse is an experimental "Doom-like" game engine that offloads 3D rendering logic entirely to a ClickHouse database. 
 
-This project serves two purposes:
+This project serves multiple purposes:
+ - As a playground for exeprimenting with agentic coding, using frontier models to solve highly complex and non-trivial tasks.
  - As a proof-of-concept, demonstrating that modern analytical databases like ClickHouse are powerful enough to handle complex, non-traditional computational tasks — specifically real-time 3D graphics generation.
- - A playground for exeprimenting with agentic coding, using frontier models to solve highly complex and non-trivial tasks.
+- As a fun way to learn about and experiment with advanced ClickHouse concepts. 
 
 The core graphics logic — including collision detection, raycasting, texture mapping, and shading — is executed via SQL queries, while a lightweight Python client handles user input and displays the resulting frames.
 
