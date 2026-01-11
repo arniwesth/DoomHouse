@@ -301,7 +301,8 @@ class DOOMHouse:
         print("🧹 Cleaning up existing database objects to avoid dependency errors...")
         try:
             # 1. Drop Materialized Views first
-            self.client.command("DROP TABLE IF EXISTS doomhouse.render_materialized")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized")
             
             # 2. Drop Dictionaries
             dicts = [
@@ -334,7 +335,34 @@ class DOOMHouse:
         # Split by semicolon
         statements = content.split(';')
         for stmt in statements:
-            stmt = stmt.strip()
+            # Remove comments
+            lines = stmt.split('\n')
+            clean_lines = []
+            in_block_comment = False
+            for line in lines:
+                if in_block_comment:
+                    if '*/' in line:
+                        in_block_comment = False
+                        line = line.split('*/', 1)[1]
+                    else:
+                        continue
+                
+                if not in_block_comment:
+                    if '/*' in line:
+                        if '*/' in line:
+                            import re
+                            line = re.sub(r'/\*.*?\*/', '', line)
+                        else:
+                            in_block_comment = True
+                            line = line.split('/*', 1)[0]
+                    
+                    if '--' in line:
+                        line = line.split('--', 1)[0]
+                    
+                    if line.strip():
+                        clean_lines.append(line)
+            
+            stmt = '\n'.join(clean_lines).strip()
             if not stmt:
                 continue
             
@@ -364,6 +392,8 @@ class DOOMHouse:
                 name = name.split('(')[0].strip()
                 if "DICTIONARY" in upper_stmt:
                     self.client.command(f"DROP DICTIONARY IF EXISTS {name}")
+                elif "VIEW" in upper_stmt:
+                    self.client.command(f"DROP VIEW IF EXISTS {name}")
                 else:
                     self.client.command(f"DROP TABLE IF EXISTS {name}")
             
