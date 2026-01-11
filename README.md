@@ -17,7 +17,7 @@ The core graphics logic — including collision detection, raycasting, texture m
 
 ### Screen recording
 <p align="center">
-[![Watch the video](https://github.com/arniwesth/DoomHouse/blob/main/images/video.mp4)]
+[![Watch the video](https://www.youtube.com/watch?v=_yni1K0cqW8)]
 </p>
 
 ### Themes
