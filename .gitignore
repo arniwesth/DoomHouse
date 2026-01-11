@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[oc]
+*.pyc
+.python-version
+.venv
+
+# System
+.DS_Store
+*.swp
+*.*~
+
+# IDEs
+.vscode/
+.devcontainer
+
+# Project specific
+*.log
+/clickhouse_server
+
+# Keep directories
+!*.gitkeep
