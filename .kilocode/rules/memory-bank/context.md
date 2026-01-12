@@ -2,11 +2,13 @@
 
 ## Current State
 **Status**: Working Prototype  
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-12
 
 The DOOMHouse project is functional with a complete raycasting engine implemented in ClickHouse SQL. The Python client successfully renders frames and handles user input.
 
 ## Recent Changes
+- **Blog Post Documentation**: Added technical SQL snippets to `docs/blogpost_v1.md` covering collision detection, vectorized raycasting, texture mapping, shading, lighting, and post-processing.
+
 Based on Notes.md, the project evolved through several iterations:
 1. **Plans**: Initial planning (Gemini 3.0)
 2. **clickhouse v1**: First implementation (Gemini 3.0 Flash)
