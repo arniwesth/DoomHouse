@@ -9,7 +9,7 @@ _**This repository is ~95% generated using Kilo Code with Gemini 3.0 Pro Preview
 
 ### Description
 
-DOOMHouse is an experimental "Doom-like" game engine that offloads 3D rendering logic entirely to a ClickHouse database. 
+DOOMHouse is an experimental "Doom-like" 3D game rendering engine that offloads all the rendering logic entirely to a ClickHouse database. 
 
 This project serves multiple purposes:
  - As a playground for exeprimenting with agentic coding, using frontier models to solve highly complex and non-trivial tasks.
@@ -105,3 +105,4 @@ This project is amongst other inspired by:
 - [DoomQL: Rendering Doom in a Database](https://cedardb.com/blog/doomql/)
 - [DuckDB-Doom: Rendering Doom in DuckDB](https://www.hey.earth/posts/duckdb-doom)
 - [Announcing adsb.exposed - Interactive Visualization and Analytics on ADS-B Flight Data with ClickHouse](https://clickhouse.com/blog/interactive-visualization-analytics-adsb-flight-data-with-clickhouse)
+- [Writing a retro 3D FPS engine from scratch](https://medium.com/@btco_code/writing-a-retro-3d-fps-engine-from-scratch-b2a9723e6b06)
