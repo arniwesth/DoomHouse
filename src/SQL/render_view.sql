@@ -175,11 +175,11 @@ FROM
             -- inside the shader. Now we calculate the exact dictionary key ONCE per pixel here.
             
             -- Wall Texture Index Calculation:
-            toUInt64((least(greatest(toInt32(y * rays.tex_step + rays.tex_base), 0), TEX_MAX) * TEX_SIZE) + rays.tx + 1) as w_tex_idx,
+            toUInt32((least(greatest(toInt32(y * rays.tex_step + rays.tex_base), 0), TEX_MAX) * TEX_SIZE) + rays.tx + 1) as w_tex_idx,
 
             -- Floor/Ceiling Texture Index Calculation:
             -- We cast a ray from the player's feet to the pixel on screen to map it to a texture coordinate (f_tx, f_ty).
-            toUInt64((
+            toUInt32((
                 bitAnd(toInt32((rays.valid_y + floor_dist * ((rays.hit_y - rays.valid_y) / (rays.perp_wall_dist + 0.001))) * TEX_SIZE), TEX_MAX) * TEX_SIZE) 
                 + bitAnd(toInt32((rays.valid_x + floor_dist * ((rays.hit_x - rays.valid_x) / (rays.perp_wall_dist + 0.001))) * TEX_SIZE), TEX_MAX) 
                 + 1
@@ -245,11 +245,11 @@ FROM
                             *,
                             arrayMap(i -> (i - valid_x) / r_dir_x, steps) as d_x,
                             -- Check X-axis intersections. Uses MAP_W for index calculation.
-                            arrayMin(arrayMap((d, i) -> if(d > 0 AND d < 30 AND dictGet('doomhouse.dict_map_data', 'val', toUInt64(floor(valid_y + r_dir_y * d) * MAP_W + floor(valid_x + r_dir_x * d + if(r_dir_x > 0, 0.005, -0.005)) + 1)) > 0, d, 999.0), d_x, steps)) as dist_x,
+                            arrayMin(arrayMap((d, i) -> if(d > 0 AND d < 30 AND dictGet('doomhouse.dict_map_data', 'val', toUInt32(floor(valid_y + r_dir_y * d) * MAP_W + floor(valid_x + r_dir_x * d + if(r_dir_x > 0, 0.005, -0.005)) + 1)) > 0, d, 999.0), d_x, steps)) as dist_x,
                             
                             arrayMap(i -> (i - valid_y) / r_dir_y, steps) as d_y,
                             -- Check Y-axis intersections. Uses MAP_W for index calculation.
-                            arrayMin(arrayMap((d, i) -> if(d > 0 AND d < 30 AND dictGet('doomhouse.dict_map_data', 'val', toUInt64(floor(valid_y + r_dir_y * d + if(r_dir_y > 0, 0.005, -0.005)) * MAP_W + floor(valid_x + r_dir_x * d) + 1)) > 0, d, 999.0), d_y, steps)) as dist_y
+                            arrayMin(arrayMap((d, i) -> if(d > 0 AND d < 30 AND dictGet('doomhouse.dict_map_data', 'val', toUInt32(floor(valid_y + r_dir_y * d + if(r_dir_y > 0, 0.005, -0.005)) * MAP_W + floor(valid_x + r_dir_x * d) + 1)) > 0, d, 999.0), d_y, steps)) as dist_y
                         FROM 
                         (
                             SELECT 
@@ -274,13 +274,13 @@ FROM
                                     -- Try to move Y. If the new coordinate hits a wall (dictGet > 0), 
                                     -- we revert to 'old_y'. We add +/- 0.2 buffering to prevent sticking.
                                     -- Uses MAP_W for index calculation.
-                                    if(dictGet('doomhouse.dict_map_data', 'val', toUInt64(floor(try_y + if(try_y > old_y, 0.2, -0.2)) * MAP_W + floor(valid_x_inter) + 1)) = 0, try_y, old_y) as valid_y,
+                                    if(dictGet('doomhouse.dict_map_data', 'val', toUInt32(floor(try_y + if(try_y > old_y, 0.2, -0.2)) * MAP_W + floor(valid_x_inter) + 1)) = 0, try_y, old_y) as valid_y,
                                     valid_x_inter as valid_x
                                 FROM (
                                     -- Collision Logic X:
                                     -- Try to move X. If dictGet returns wall, keep old_x.
                                     -- Uses MAP_W for index calculation.
-                                    SELECT *, if(dictGet('doomhouse.dict_map_data', 'val', toUInt64(floor(old_y) * MAP_W + floor(try_x + if(try_x > old_x, 0.2, -0.2)) + 1)) = 0, try_x, old_x) as valid_x_inter
+                                    SELECT *, if(dictGet('doomhouse.dict_map_data', 'val', toUInt32(floor(old_y) * MAP_W + floor(try_x + if(try_x > old_x, 0.2, -0.2)) + 1)) = 0, try_x, old_x) as valid_x_inter
                                     FROM doomhouse.player_input
                                 ) AS pi
                             ) AS p
@@ -304,7 +304,7 @@ FROM
             SELECT 
                 number as y,
                 if(number < H_HALF, toInt32(H - 1 - number), toInt32(number)) as dist_lookup_idx,
-                dictGet('doomhouse.dict_floor_dist', 'dist', toUInt64(dist_lookup_idx + 1)) as floor_dist
+                dictGet('doomhouse.dict_floor_dist', 'dist', toUInt32(dist_lookup_idx + 1)) as floor_dist
             FROM numbers(H)
         ) AS v_lines
     ) AS sub
