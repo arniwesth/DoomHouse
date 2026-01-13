@@ -542,7 +542,7 @@ class DOOMHouse:
             # Update status text (Multi-line)
             fps = 1000/(self.insert_time + select_time)
             avgfps = 1000/(self.avg_insert_time + avg_select_time)
-            line1 = f"Insert: {self.insert_time:3.2f}ms (avg: {self.avg_insert_time:3.2f}ms) | Select: {select_time:3.2f}ms (avg: {avg_select_time:3.2f}ms) | {fps:2.1f}fps (avg: {avgfps:2.1f}fps)"
+            line1 = f"{fps:2.1f}fps (avg: {avgfps:2.1f}fps) | Insert: {self.insert_time:3.2f}ms (avg: {self.avg_insert_time:3.2f}ms) | Select: {select_time:3.2f}ms (avg: {avg_select_time:3.2f}ms)"
             line2 = f"Pos: ({self.pos_x:5.2f}, {self.pos_y:5.2f}) | Theme: {self.current_theme.upper()} (Press 'T' to switch theme)"
 
             self.status_label.config(text=f"{line1}\n{line2}")
