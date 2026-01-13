@@ -5,6 +5,7 @@ import math
 import os
 import time
 import tkinter as tk
+import concurrent.futures
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 from dotenv import load_dotenv
 
@@ -87,6 +88,11 @@ class DOOMHouse:
             self.client = clickhouse_connect.get_client(
                 host=HOST, port=PORT, username=USER, password=PASS
             )
+            # Second client for parallel queries
+            self.client2 = clickhouse_connect.get_client(
+                host=HOST, port=PORT, username=USER, password=PASS
+            )
+            
             self.client.command("CREATE DATABASE IF NOT EXISTS doomhouse")
             self.cleanup_database()
             self.initialize_game_data()
@@ -303,6 +309,10 @@ class DOOMHouse:
             # 1. Drop Materialized Views first
             self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized")
             self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized_top")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized_bottom")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_top")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_bottom")
             
             # 2. Drop Dictionaries
             dicts = [
@@ -316,7 +326,9 @@ class DOOMHouse:
             tables = [
                 "map_source", "floor_dist_source", "tex_source", "tex_wall_source",
                 "tex_wall1_source", "tex_wall2_source", "tex_floor_source", "tex_ceiling_source",
-                "player_input", "rendered_frame", "rendered_frame_post_processed"
+                "player_input", "rendered_frame", "rendered_frame_post_processed",
+                "rendered_frame_top", "rendered_frame_bottom",
+                "rendered_frame_post_processed_top", "rendered_frame_post_processed_bottom"
             ]
             for t in tables:
                 self.client.command(f"DROP TABLE IF EXISTS doomhouse.{t}")
@@ -502,10 +514,22 @@ class DOOMHouse:
         try:
             start_time = time.time()
             
-            # Pull rendered frame from the materialized table
-            #result = self.client.query("SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame")            
-            result = self.client.query("SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed")
-            if not result.result_rows:
+            # Parallel Query Execution
+            # We launch two concurrent queries to fetch the top and bottom halves of the frame.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                future_top = executor.submit(
+                    self.client.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_top"
+                )
+                future_bottom = executor.submit(
+                    self.client2.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_bottom"
+                )
+                
+                result_top = future_top.result()
+                result_bottom = future_bottom.result()
+
+            if not result_top.result_rows or not result_bottom.result_rows:
                 return
 
             # Calculate render time
@@ -513,27 +537,25 @@ class DOOMHouse:
             self.total_select_time += select_time
             self.select_count += 1
             avg_select_time = self.total_select_time / self.select_count
-            print(f"Select: {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
+            print(f"Select (Parallel): {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
 
-            # Set new position (synced from DB)
-            self.pos_x = result.result_rows[0][0]
-            self.pos_y = result.result_rows[0][1]
+            # Set new position (synced from DB - using top result)
+            self.pos_x = result_top.result_rows[0][0]
+            self.pos_y = result_top.result_rows[0][1]
             
-            # Get Array(UInt32) and convert to bytes
-            # ClickHouse returns a list of ints for Array(UInt32)
-            pixel_data = result.result_rows[0][2]
+            # Compositing Step: Stitch the two partial image buffers
+            pixel_data_top = result_top.result_rows[0][2]
+            pixel_data_bottom = result_bottom.result_rows[0][2]
+            
+            # Concatenate the lists (Top + Bottom)
+            pixel_data = pixel_data_top + pixel_data_bottom
             
             # Convert list of UInt32 to bytes efficiently.
             # Each UInt32 is [R, G, B, 0] in little-endian memory.
-            # Note: SQL now packs as R (shift 0), G (shift 8), B (shift 16).
-            # In little-endian 'I' (UInt32), this results in [R, G, B, 0] bytes.
             raw_bytes = array.array('I', pixel_data).tobytes()
             
             # Create image from raw bytes (640x480)
-            # "RGBX" means 4 bytes per pixel, where X is the 4th byte (0 in our case).
             image = Image.frombytes("RGB", (640, 480), raw_bytes, "raw", "RGBX")
-            #image = Image.frombytes("RGB", (320, 240), raw_bytes, "raw", "RGBX")
-            #image = Image.frombytes("RGB", (160, 120), raw_bytes, "raw", "RGBX")
 
             # Convert PIL to ImageTk
             self.photo = ImageTk.PhotoImage(image)
@@ -549,8 +571,8 @@ class DOOMHouse:
             
             self.root.update_idletasks()
 
-            self.pos_x = result.result_rows[0][0]
-            self.pos_y = result.result_rows[0][1]
+            self.pos_x = result_top.result_rows[0][0]
+            self.pos_y = result_top.result_rows[0][1]
         except Exception as e:
             print(f"Render Error: {e}")
 
