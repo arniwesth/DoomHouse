@@ -1,15 +1,8 @@
-CREATE TABLE doomhouse.rendered_frame_post_processed_top (
-    pos_x Float32,
-    pos_y Float32,
-    image_data Array(UInt32)
-)
-ENGINE = Memory 
-SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
-
-CREATE TABLE doomhouse.rendered_frame_post_processed_bottom (
-    pos_x Float32,
-    pos_y Float32,
-    image_data Array(UInt32)
-)
-ENGINE = Memory 
-SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_1 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_2 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_3 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_4 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_5 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_6 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_7 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;
+CREATE TABLE doomhouse.rendered_frame_post_processed_8 (pos_x Float32, pos_y Float32, image_data Array(UInt32)) ENGINE = Memory SETTINGS min_rows_to_keep = 1, max_rows_to_keep = 1;

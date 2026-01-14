@@ -85,14 +85,19 @@ class DOOMHouse:
 
         # Connect to DB
         try:
-            self.client = clickhouse_connect.get_client(
-                host=HOST, port=PORT, username=USER, password=PASS
-            )
-            # Second client for parallel queries
-            self.client2 = clickhouse_connect.get_client(
-                host=HOST, port=PORT, username=USER, password=PASS
-            )
-            
+            # Create a pool of clients for parallel queries (8 streams)
+            self.clients = []
+            print("🔌 Connecting to ClickHouse (initializing 8 clients)...")
+            for i in range(8):
+                self.clients.append(clickhouse_connect.get_client(
+                    host=HOST, port=PORT, username=USER, password=PASS
+                ))
+            self.client = self.clients[0] # Main client for other ops
+
+            # Print ClickHouse version
+            version = self.client.query("SELECT version()").result_rows[0][0]
+            print(f"ClickHouse version: {version}")
+
             self.client.command("CREATE DATABASE IF NOT EXISTS doomhouse")
             self.cleanup_database()
             self.initialize_game_data()
@@ -314,6 +319,11 @@ class DOOMHouse:
             self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_top")
             self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_bottom")
             
+            # Drop 8-way split views
+            for i in range(1, 9):
+                self.client.command(f"DROP VIEW IF EXISTS doomhouse.render_materialized_{i}")
+                self.client.command(f"DROP VIEW IF EXISTS doomhouse.post_process_materialized_{i}")
+
             # 2. Drop Dictionaries
             dicts = [
                 "dict_map_data", "dict_floor_dist", "dict_tex_data", "dict_tex_wall_data",
@@ -332,6 +342,12 @@ class DOOMHouse:
             ]
             for t in tables:
                 self.client.command(f"DROP TABLE IF EXISTS doomhouse.{t}")
+            
+            # Drop 8-way split tables
+            for i in range(1, 9):
+                self.client.command(f"DROP TABLE IF EXISTS doomhouse.rendered_frame_{i}")
+                self.client.command(f"DROP TABLE IF EXISTS doomhouse.rendered_frame_post_processed_{i}")
+
         except Exception as e:
             print(f"Note: Cleanup encountered an issue: {e}")
 
@@ -515,21 +531,19 @@ class DOOMHouse:
             start_time = time.time()
             
             # Parallel Query Execution
-            # We launch two concurrent queries to fetch the top and bottom halves of the frame.
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                future_top = executor.submit(
-                    self.client.query,
-                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_top"
-                )
-                future_bottom = executor.submit(
-                    self.client2.query,
-                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_bottom"
-                )
+            # We launch 8 concurrent queries to fetch the frame strips.
+            results = [None] * 8
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                futures = []
+                for i in range(8):
+                    query = f"SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_{i+1}"
+                    futures.append(executor.submit(self.clients[i].query, query))
                 
-                result_top = future_top.result()
-                result_bottom = future_bottom.result()
+                for i, future in enumerate(futures):
+                    results[i] = future.result()
 
-            if not result_top.result_rows or not result_bottom.result_rows:
+            # Check if any result is empty
+            if any(not r.result_rows for r in results):
                 return
 
             # Calculate render time
@@ -537,18 +551,16 @@ class DOOMHouse:
             self.total_select_time += select_time
             self.select_count += 1
             avg_select_time = self.total_select_time / self.select_count
-            print(f"Select (Parallel): {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
+            print(f"Select (8-Way Parallel): {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
 
-            # Set new position (synced from DB - using top result)
-            self.pos_x = result_top.result_rows[0][0]
-            self.pos_y = result_top.result_rows[0][1]
+            # Set new position (synced from DB - using first result)
+            self.pos_x = results[0].result_rows[0][0]
+            self.pos_y = results[0].result_rows[0][1]
             
-            # Compositing Step: Stitch the two partial image buffers
-            pixel_data_top = result_top.result_rows[0][2]
-            pixel_data_bottom = result_bottom.result_rows[0][2]
-            
-            # Concatenate the lists (Top + Bottom)
-            pixel_data = pixel_data_top + pixel_data_bottom
+            # Compositing Step: Stitch the 8 partial image buffers
+            pixel_data = []
+            for res in results:
+                pixel_data.extend(res.result_rows[0][2])
             
             # Convert list of UInt32 to bytes efficiently.
             # Each UInt32 is [R, G, B, 0] in little-endian memory.
@@ -571,8 +583,8 @@ class DOOMHouse:
             
             self.root.update_idletasks()
 
-            self.pos_x = result_top.result_rows[0][0]
-            self.pos_y = result_top.result_rows[0][1]
+            self.pos_x = results[0].result_rows[0][0]
+            self.pos_y = results[0].result_rows[0][1]
         except Exception as e:
             print(f"Render Error: {e}")
 
