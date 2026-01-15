@@ -92,6 +92,12 @@ class DOOMHouse:
             self.client2 = clickhouse_connect.get_client(
                 host=HOST, port=PORT, username=USER, password=PASS
             )
+            self.client3 = clickhouse_connect.get_client(
+                host=HOST, port=PORT, username=USER, password=PASS
+            )
+            self.client4 = clickhouse_connect.get_client(
+                host=HOST, port=PORT, username=USER, password=PASS
+            )
             
             # Get and print ClickHouse version
             version = self.client.query("SELECT version()").result_rows[0][0]
@@ -317,6 +323,9 @@ class DOOMHouse:
             self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized_bottom")
             self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_top")
             self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_bottom")
+            for i in range(1, 5):
+                self.client.command(f"DROP VIEW IF EXISTS doomhouse.render_materialized_{i}")
+                self.client.command(f"DROP VIEW IF EXISTS doomhouse.post_process_materialized_{i}")
             
             # 2. Drop Dictionaries
             dicts = [
@@ -336,6 +345,9 @@ class DOOMHouse:
             ]
             for t in tables:
                 self.client.command(f"DROP TABLE IF EXISTS doomhouse.{t}")
+            for i in range(1, 5):
+                self.client.command(f"DROP TABLE IF EXISTS doomhouse.rendered_frame_{i}")
+                self.client.command(f"DROP TABLE IF EXISTS doomhouse.rendered_frame_post_processed_{i}")
         except Exception as e:
             print(f"Note: Cleanup encountered an issue: {e}")
 
@@ -519,21 +531,31 @@ class DOOMHouse:
             start_time = time.time()
             
             # Parallel Query Execution
-            # We launch two concurrent queries to fetch the top and bottom halves of the frame.
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                future_top = executor.submit(
+            # We launch four concurrent queries to fetch the quarters of the frame.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                future1 = executor.submit(
                     self.client.query,
-                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_top"
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_1"
                 )
-                future_bottom = executor.submit(
+                future2 = executor.submit(
                     self.client2.query,
-                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_bottom"
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_2"
+                )
+                future3 = executor.submit(
+                    self.client3.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_3"
+                )
+                future4 = executor.submit(
+                    self.client4.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_4"
                 )
                 
-                result_top = future_top.result()
-                result_bottom = future_bottom.result()
+                result1 = future1.result()
+                result2 = future2.result()
+                result3 = future3.result()
+                result4 = future4.result()
 
-            if not result_top.result_rows or not result_bottom.result_rows:
+            if not result1.result_rows or not result2.result_rows or not result3.result_rows or not result4.result_rows:
                 return
 
             # Calculate render time
@@ -541,18 +563,19 @@ class DOOMHouse:
             self.total_select_time += select_time
             self.select_count += 1
             avg_select_time = self.total_select_time / self.select_count
-            print(f"Select (Parallel): {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
+            print(f"Select (Parallel 4-way): {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
 
-            # Set new position (synced from DB - using top result)
-            self.pos_x = result_top.result_rows[0][0]
-            self.pos_y = result_top.result_rows[0][1]
+            # Set new position (synced from DB - using first result)
+            self.pos_x = result1.result_rows[0][0]
+            self.pos_y = result1.result_rows[0][1]
             
-            # Compositing Step: Stitch the two partial image buffers
-            pixel_data_top = result_top.result_rows[0][2]
-            pixel_data_bottom = result_bottom.result_rows[0][2]
-            
-            # Concatenate the lists (Top + Bottom)
-            pixel_data = pixel_data_top + pixel_data_bottom
+            # Compositing Step: Stitch the four partial image buffers
+            pixel_data = (
+                result1.result_rows[0][2] + 
+                result2.result_rows[0][2] + 
+                result3.result_rows[0][2] + 
+                result4.result_rows[0][2]
+            )
             
             # Convert list of UInt32 to bytes efficiently.
             # Each UInt32 is [R, G, B, 0] in little-endian memory.
@@ -575,8 +598,8 @@ class DOOMHouse:
             
             self.root.update_idletasks()
 
-            self.pos_x = result_top.result_rows[0][0]
-            self.pos_y = result_top.result_rows[0][1]
+            self.pos_x = result1.result_rows[0][0]
+            self.pos_y = result1.result_rows[0][1]
         except Exception as e:
             print(f"Render Error: {e}")
 
