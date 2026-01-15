@@ -93,6 +93,10 @@ class DOOMHouse:
                 host=HOST, port=PORT, username=USER, password=PASS
             )
             
+            # Get and print ClickHouse version
+            version = self.client.query("SELECT version()").result_rows[0][0]
+            print(f"Connected to ClickHouse version: {version}")
+            
             self.client.command("CREATE DATABASE IF NOT EXISTS doomhouse")
             self.cleanup_database()
             self.initialize_game_data()
