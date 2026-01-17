@@ -2,6 +2,65 @@
    ========================================================================================
    DOOMHOUSE RENDER ENGINE: 3D Raycasting in Pure SQL (4-Way Split Pipeline)
    ========================================================================================
+
+   OVERVIEW:
+   This script implements a Wolfenstein 3D-style raycasting engine entirely within a 
+   ClickHouse Materialized View. It transforms player coordinates and a 2D map into 
+   a rendered 3D frame buffer.
+
+   CORE CONCEPTS:
+
+   1. VECTORIZED RAYCASTING (Replacing Loops with Arrays):
+      SQL is declarative and lacks efficient imperative `for` or `while` loops needed 
+      to march a ray step-by-step until it hits a wall.
+      
+      We solve this using High-Order Array Functions:
+      - `range(1, RAY_STEPS)`: Generates an array of indices [1, 2, ... 15].
+      - `arrayMap(func, array)`: Applies the ray trajectory logic to *every* step 
+        simultaneously (vectorization) rather than sequentially.
+      - `arrayMin(array)`: Analyzing the results of the map to find the *first* 
+        step where a wall intersection occurred (Minimum distance).
+
+   2. DICTIONARY TEXTURE MAPPING (Split Channels):
+      Textures and Map data are stored in memory-mapped ClickHouse Dictionaries.
+      To optimize memory access and CPU cycles, texture data is split into separate 
+      `r`, `g`, and `b` (UInt8) columns. This avoids the overhead of bitwise unpacking 
+      a single UInt32 color integer during the shading step.
+
+   3. FISH-EYE CORRECTION:
+      Raw Euclidean distance creates a "fish-eye" lens effect. We correct this by 
+      projecting the ray distance onto the camera plane vector (Dot Product), 
+      ensuring walls appear straight.
+
+   4. LIGHTING & ATMOSPHERE:
+      To create 3D depth, the engine applies two shading techniques:
+      - Distance Fog: Pixel colors are multiplied by a decay factor based on distance. 
+        Everything fades to black at a distance of ~20 units.
+      - Fake Contrast: Walls facing North/South are rendered 40% darker than walls 
+        facing East/West. This visually separates corners without needing real light sources.
+
+   5. COLLISION DETECTION (Slide-and-Collide):
+      Movement logic includes a collision check against the map dictionary. 
+      Before updating the player's position, the engine checks the target coordinates 
+      (with a +/- 0.2 buffer radius). If a wall is detected, the movement along that 
+      specific axis is rejected. This independent axis check allows the player to 
+      "slide" along walls rather than getting stuck.
+
+   6. LOOKUP TABLES (Pre-computed Floor Distances):
+      Floor and ceiling casting typically requires an expensive division operation 
+      for every single pixel (`distance = height / pixel_row`).
+      To optimize this, we pre-calculate these values into `doomhouse.dict_floor_dist`.
+      The engine performs a fast O(1) dictionary lookup instead of performing floating-point 
+      division at runtime.
+
+   7. OPTIMIZED SHADER PIPELINE (Pre-calculation):
+      Texture coordinate math (scaling, wrapping, clamping) is expensive.
+      - Pre-calculation: We calculate the dictionary lookup index (`w_tex_idx`, `f_tex_idx`) 
+        once per pixel in a subquery, rather than repeating the math for every color channel.
+      - Assembly: The final pixel color is packed into a UInt32 (0xBBGGRR) using 
+        fast bitwise shifts at the very end of the pipeline.
+
+   ========================================================================================
 */
 
 -- =========================================================
