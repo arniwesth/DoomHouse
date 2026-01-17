@@ -88,10 +88,34 @@ FROM (
         x, y, valid_x, valid_y,
         multiIf(
             toInt32(y) >= draw_start AND toInt32(y) <= draw_end,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'r', w_tex_idx) * base_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'g', w_tex_idx) * base_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'b', w_tex_idx) * base_shade), 16)), 'UInt32'),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 16)
+                ), 'UInt32'
+            ),
             toInt32(y) < draw_start,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32'),
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32')
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            ),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            )
         ) AS final_color
     FROM (
         SELECT 
@@ -178,10 +202,34 @@ FROM (
         x, y, valid_x, valid_y,
         multiIf(
             toInt32(y) >= draw_start AND toInt32(y) <= draw_end,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'r', w_tex_idx) * base_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'g', w_tex_idx) * base_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'b', w_tex_idx) * base_shade), 16)), 'UInt32'),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 16)
+                ), 'UInt32'
+            ),
             toInt32(y) < draw_start,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32'),
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32')
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            ),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            )
         ) AS final_color
     FROM (
         SELECT 
@@ -268,10 +316,34 @@ FROM (
         x, y, valid_x, valid_y,
         multiIf(
             toInt32(y) >= draw_start AND toInt32(y) <= draw_end,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'r', w_tex_idx) * base_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'g', w_tex_idx) * base_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'b', w_tex_idx) * base_shade), 16)), 'UInt32'),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 16)
+                ), 'UInt32'
+            ),
             toInt32(y) < draw_start,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32'),
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32')
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            ),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            )
         ) AS final_color
     FROM (
         SELECT 
@@ -358,10 +430,34 @@ FROM (
         x, y, valid_x, valid_y,
         multiIf(
             toInt32(y) >= draw_start AND toInt32(y) <= draw_end,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'r', w_tex_idx) * base_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'g', w_tex_idx) * base_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'b', w_tex_idx) * base_shade), 16)), 'UInt32'),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_wall1_data', 'v', w_tex_idx) * base_shade), 16)
+                ), 'UInt32'
+            ),
             toInt32(y) < draw_start,
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32'),
-            CAST(bitOr(bitOr(bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'r', f_tex_idx) * floor_shade), 0), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'g', f_tex_idx) * floor_shade), 8)), bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'b', f_tex_idx) * floor_shade), 16)), 'UInt32')
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_ceiling_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            ),
+            CAST(
+                bitOr(
+                    bitOr(
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 0),
+                        bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 8)
+                    ),
+                    bitShiftLeft(toUInt32(dictGet('doomhouse.dict_tex_floor_data', 'v', f_tex_idx) * floor_shade), 16)
+                ), 'UInt32'
+            )
         ) AS final_color
     FROM (
         SELECT 

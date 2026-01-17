@@ -42,7 +42,7 @@ SELECT
 FROM numbers(480);
 
 -- 3. Texture Data Sources (Placeholder tables, populated by Python client)
-CREATE TABLE IF NOT EXISTS doomhouse.tex_wall1_source (id UInt32, r UInt8, g UInt8, b UInt8) ENGINE = MergeTree ORDER BY id;
-CREATE TABLE IF NOT EXISTS doomhouse.tex_wall2_source (id UInt32, r UInt8, g UInt8, b UInt8) ENGINE = MergeTree ORDER BY id;
-CREATE TABLE IF NOT EXISTS doomhouse.tex_floor_source (id UInt32, r UInt8, g UInt8, b UInt8) ENGINE = MergeTree ORDER BY id;
-CREATE TABLE IF NOT EXISTS doomhouse.tex_ceiling_source (id UInt32, r UInt8, g UInt8, b UInt8) ENGINE = MergeTree ORDER BY id;
+CREATE TABLE IF NOT EXISTS doomhouse.tex_wall1_source (id UInt32, v UInt8) ENGINE = MergeTree ORDER BY id;
+CREATE TABLE IF NOT EXISTS doomhouse.tex_wall2_source (id UInt32, v UInt8) ENGINE = MergeTree ORDER BY id;
+CREATE TABLE IF NOT EXISTS doomhouse.tex_floor_source (id UInt32, v UInt8) ENGINE = MergeTree ORDER BY id;
+CREATE TABLE IF NOT EXISTS doomhouse.tex_ceiling_source (id UInt32, v UInt8) ENGINE = MergeTree ORDER BY id;

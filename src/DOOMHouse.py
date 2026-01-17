@@ -264,9 +264,7 @@ class DOOMHouse:
             self.client.command(f"""
                 CREATE TABLE doomhouse.{table_name} (
                     id UInt32,
-                    r UInt8,
-                    g UInt8,
-                    b UInt8
+                    v UInt8
                 ) ENGINE = MergeTree ORDER BY id
             """)
             
@@ -274,9 +272,7 @@ class DOOMHouse:
             self.client.command(f"""
                 CREATE DICTIONARY doomhouse.{dict_name} (
                     id UInt32,
-                    r UInt8,
-                    g UInt8,
-                    b UInt8
+                    v UInt8
                 )
                 PRIMARY KEY id
                 SOURCE(CLICKHOUSE(TABLE '{table_name}' DB 'doomhouse'))
@@ -295,9 +291,7 @@ class DOOMHouse:
             data = [
                 [
                     i + 1,
-                    max(0, min(255, int(r * TEXTURE_INTENSITY))),
-                    max(0, min(255, int(g * TEXTURE_INTENSITY))),
-                    max(0, min(255, int(b * TEXTURE_INTENSITY)))
+                    max(0, min(255, int(((r + g + b) / 3.0) * TEXTURE_INTENSITY)))
                 ]
                 for i, (r, g, b) in enumerate(tex_data)
             ]
