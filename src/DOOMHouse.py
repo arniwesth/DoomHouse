@@ -103,6 +103,25 @@ class DOOMHouse:
             version = self.client.query("SELECT version()").result_rows[0][0]
             print(f"Connected to ClickHouse version: {version}")
             
+            # Version check
+            try:
+                v_parts = [int(p) for p in version.split('.')]
+                required_v = [26, 1, 1, 562]
+                is_supported = True
+                for i in range(min(len(v_parts), len(required_v))):
+                    if v_parts[i] < required_v[i]:
+                        is_supported = False
+                        break
+                    elif v_parts[i] > required_v[i]:
+                        break
+                
+                if not is_supported:
+                    print("\n" + "="*80)
+                    print("**OBS**: Due to an issue with some newer versions of ClickHouse this program only supports ClickHosue version `26.1.1.562` or later.")
+                    print("="*80 + "\n")
+            except Exception as ve:
+                print(f"Could not parse ClickHouse version for compatibility check: {ve}")
+            
             self.client.command("CREATE DATABASE IF NOT EXISTS doomhouse")
             self.cleanup_database()
             self.initialize_game_data()
