@@ -5,6 +5,7 @@ import math
 import os
 import time
 import tkinter as tk
+import concurrent.futures
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 from dotenv import load_dotenv
 
@@ -87,6 +88,40 @@ class DOOMHouse:
             self.client = clickhouse_connect.get_client(
                 host=HOST, port=PORT, username=USER, password=PASS
             )
+            # Second client for parallel queries
+            self.client2 = clickhouse_connect.get_client(
+                host=HOST, port=PORT, username=USER, password=PASS
+            )
+            self.client3 = clickhouse_connect.get_client(
+                host=HOST, port=PORT, username=USER, password=PASS
+            )
+            self.client4 = clickhouse_connect.get_client(
+                host=HOST, port=PORT, username=USER, password=PASS
+            )
+            
+            # Get and print ClickHouse version
+            version = self.client.query("SELECT version()").result_rows[0][0]
+            print(f"Connected to ClickHouse version: {version}")
+            
+            # Version check
+            try:
+                v_parts = [int(p) for p in version.split('.')]
+                required_v = [26, 1, 1, 562]
+                is_supported = True
+                for i in range(min(len(v_parts), len(required_v))):
+                    if v_parts[i] < required_v[i]:
+                        is_supported = False
+                        break
+                    elif v_parts[i] > required_v[i]:
+                        break
+                
+                if not is_supported:
+                    print("\n" + "="*80)
+                    print("**OBS**: Due to an issue with some newer versions of ClickHouse this program only supports ClickHosue version `26.1.1.562` or later.")
+                    print("="*80 + "\n")
+            except Exception as ve:
+                print(f"Could not parse ClickHouse version for compatibility check: {ve}")
+            
             self.client.command("CREATE DATABASE IF NOT EXISTS doomhouse")
             self.cleanup_database()
             self.initialize_game_data()
@@ -303,6 +338,13 @@ class DOOMHouse:
             # 1. Drop Materialized Views first
             self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized")
             self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized_top")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.render_materialized_bottom")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_top")
+            self.client.command("DROP VIEW IF EXISTS doomhouse.post_process_materialized_bottom")
+            for i in range(1, 5):
+                self.client.command(f"DROP VIEW IF EXISTS doomhouse.render_materialized_{i}")
+                self.client.command(f"DROP VIEW IF EXISTS doomhouse.post_process_materialized_{i}")
             
             # 2. Drop Dictionaries
             dicts = [
@@ -316,10 +358,15 @@ class DOOMHouse:
             tables = [
                 "map_source", "floor_dist_source", "tex_source", "tex_wall_source",
                 "tex_wall1_source", "tex_wall2_source", "tex_floor_source", "tex_ceiling_source",
-                "player_input", "rendered_frame", "rendered_frame_post_processed"
+                "player_input", "rendered_frame", "rendered_frame_post_processed",
+                "rendered_frame_top", "rendered_frame_bottom",
+                "rendered_frame_post_processed_top", "rendered_frame_post_processed_bottom"
             ]
             for t in tables:
                 self.client.command(f"DROP TABLE IF EXISTS doomhouse.{t}")
+            for i in range(1, 5):
+                self.client.command(f"DROP TABLE IF EXISTS doomhouse.rendered_frame_{i}")
+                self.client.command(f"DROP TABLE IF EXISTS doomhouse.rendered_frame_post_processed_{i}")
         except Exception as e:
             print(f"Note: Cleanup encountered an issue: {e}")
 
@@ -502,10 +549,32 @@ class DOOMHouse:
         try:
             start_time = time.time()
             
-            # Pull rendered frame from the materialized table
-            #result = self.client.query("SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame")            
-            result = self.client.query("SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed")
-            if not result.result_rows:
+            # Parallel Query Execution
+            # We launch four concurrent queries to fetch the quarters of the frame.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                future1 = executor.submit(
+                    self.client.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_1"
+                )
+                future2 = executor.submit(
+                    self.client2.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_2"
+                )
+                future3 = executor.submit(
+                    self.client3.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_3"
+                )
+                future4 = executor.submit(
+                    self.client4.query,
+                    "SELECT pos_x, pos_y, image_data FROM doomhouse.rendered_frame_post_processed_4"
+                )
+                
+                result1 = future1.result()
+                result2 = future2.result()
+                result3 = future3.result()
+                result4 = future4.result()
+
+            if not result1.result_rows or not result2.result_rows or not result3.result_rows or not result4.result_rows:
                 return
 
             # Calculate render time
@@ -513,42 +582,43 @@ class DOOMHouse:
             self.total_select_time += select_time
             self.select_count += 1
             avg_select_time = self.total_select_time / self.select_count
-            print(f"Select: {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
+            print(f"Select (Parallel 4-way): {select_time:.2f}ms (Avg: {avg_select_time:.2f}ms)")
 
-            # Set new position (synced from DB)
-            self.pos_x = result.result_rows[0][0]
-            self.pos_y = result.result_rows[0][1]
+            # Set new position (synced from DB - using first result)
+            self.pos_x = result1.result_rows[0][0]
+            self.pos_y = result1.result_rows[0][1]
             
-            # Get Array(UInt32) and convert to bytes
-            # ClickHouse returns a list of ints for Array(UInt32)
-            pixel_data = result.result_rows[0][2]
+            # Compositing Step: Stitch the four partial image buffers
+            pixel_data = (
+                result1.result_rows[0][2] + 
+                result2.result_rows[0][2] + 
+                result3.result_rows[0][2] + 
+                result4.result_rows[0][2]
+            )
             
             # Convert list of UInt32 to bytes efficiently.
             # Each UInt32 is [R, G, B, 0] in little-endian memory.
-            # Note: SQL now packs as R (shift 0), G (shift 8), B (shift 16).
-            # In little-endian 'I' (UInt32), this results in [R, G, B, 0] bytes.
             raw_bytes = array.array('I', pixel_data).tobytes()
             
             # Create image from raw bytes (640x480)
-            # "RGBX" means 4 bytes per pixel, where X is the 4th byte (0 in our case).
             image = Image.frombytes("RGB", (640, 480), raw_bytes, "raw", "RGBX")
-            #image = Image.frombytes("RGB", (320, 240), raw_bytes, "raw", "RGBX")
-            #image = Image.frombytes("RGB", (160, 120), raw_bytes, "raw", "RGBX")
 
             # Convert PIL to ImageTk
             self.photo = ImageTk.PhotoImage(image)
             self.label.config(image=self.photo)
             
-            # Update status text (Multi-line)            
-            line1 = f"Insert: {self.insert_time:6.2f}ms (avg: {self.avg_insert_time:6.2f}ms) | Select: {select_time:6.2f}ms (avg: {avg_select_time:6.2f}ms)"
+            # Update status text (Multi-line)
+            fps = 1000/(self.insert_time + select_time)
+            avgfps = 1000/(self.avg_insert_time + avg_select_time)
+            line1 = f"{fps:2.1f}fps (avg: {avgfps:2.1f}fps) | Insert: {self.insert_time:3.2f}ms (avg: {self.avg_insert_time:3.2f}ms) | Select: {select_time:3.2f}ms (avg: {avg_select_time:3.2f}ms)"
             line2 = f"Pos: ({self.pos_x:5.2f}, {self.pos_y:5.2f}) | Theme: {self.current_theme.upper()} (Press 'T' to switch theme)"
 
             self.status_label.config(text=f"{line1}\n{line2}")
             
             self.root.update_idletasks()
 
-            self.pos_x = result.result_rows[0][0]
-            self.pos_y = result.result_rows[0][1]
+            self.pos_x = result1.result_rows[0][0]
+            self.pos_y = result1.result_rows[0][1]
         except Exception as e:
             print(f"Render Error: {e}")
 
