@@ -30,14 +30,15 @@ The engine supports different visual styles through SQL-based rendering logic. E
 ## Prerequisites
 
 - **Python 3.11 or later**
-- **ClickHouse Server** (Local or Remote)
+- **ClickHouse Server 26.1.1.562 or later** (Local or Remote)
 
 ## Installation
+
+**OBS**: Due to an issue with some newer versions of ClickHouse this program only supports ClickHosue version `26.1.1.562` or later. 
 
 ### 1. Install ClickHouse Server Locally
 
 If you don't have ClickHouse installed, you can run it easily using Docker or install it directly on your system.
-The program has been tested with ClickHosue version `26.1.1.166`.
 
 #### Using Docker (might be slower than native installation)
 ```bash
